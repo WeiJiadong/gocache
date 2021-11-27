@@ -5,3 +5,12 @@
 3.数据过期，过期策略为懒更新;  
 4.key和value支持interface;  
 5.支持返回过期数据。
+
+### 使用示例
+```go
+func main() {
+    cache := gocache.New(gocache.WithExpire(500*time.Second), gocache.WithKeyCnt(10))
+    cache.Set(1, 1)
+    fmt.Println(cache.Get(1))
+}
+```
