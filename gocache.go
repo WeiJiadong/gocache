@@ -43,9 +43,9 @@ func (c *Cache) Get(key interface{}) (interface{}, error) {
 
 	// 2 key存在，判断key是否过期，若过期则返回val和KeyIsExpiredErr，方便调用方处理
 	if val.Value.(*elem).expire < time.Now().UnixNano() {
-		return val, KeyIsExpiredErr
+		return val.Value.(*elem).value, KeyIsExpiredErr
 	}
-	return val, nil
+	return val.Value.(*elem).value, nil
 }
 
 // Set 设置数据，设置数据。用error是否为nil来标识是否出错
@@ -60,8 +60,7 @@ func (c *Cache) Set(key, val interface{}) error {
 	}
 
 	// 2 key不存在，则直接在最前面插入一个值，并更新map
-	newVal := c.lru.PushFront(&elem{key: key, value: val, expire: time.Now().Add(c.opts.expire).UnixNano()})
-	c.data[key] = newVal
+	c.data[key] = c.lru.PushFront(&elem{key: key, value: val, expire: time.Now().Add(c.opts.expire).UnixNano()})
 
 	// 3 判断是否到达容量限制，若达到限制，则进行LRU剔除
 	if c.opts.keyCnt > 0 && c.lru.Len() > c.opts.keyCnt {
