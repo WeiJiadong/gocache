@@ -97,6 +97,7 @@ func (c *Cache) GetAndSet(ctx context.Context, key string, fn UpdateCallback) (i
 		if err == nil {
 			return oldVal, nil
 		}
+
 		// 更新数据，若数据源报错，则返回旧数据和error，若正常则更新缓存并返回数据
 		val, err := fn()
 		if err != nil {
@@ -109,6 +110,7 @@ func (c *Cache) GetAndSet(ctx context.Context, key string, fn UpdateCallback) (i
 
 // New Cache构造函数
 func New(opts ...CacheOptHelper) *Cache {
+	// 1 构造默认的cache对象
 	cache := &Cache{
 		data:    make(map[interface{}]*list.Element),
 		lru:     list.New(),
@@ -116,6 +118,8 @@ func New(opts ...CacheOptHelper) *Cache {
 		opts:    new(CacheOpt),
 		sf:      new(singleflight.Group),
 	}
+
+	// 2 使用传入的opt修改cache对象的相关参数，并返回创建好的cache对象
 	for i := range opts {
 		opts[i](cache.opts)
 	}

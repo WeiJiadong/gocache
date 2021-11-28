@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"git.code.oa.com/goom/mocker"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -162,5 +163,18 @@ func TestNew(t *testing.T) {
 
 		So(interfaceEqual(expectVal, val), ShouldBeTrue)
 		So(errorEqual(expectErr, err), ShouldBeTrue)
+	})
+
+	Convey("验证GetAndSet double check 逻辑:", t, func() {
+		cache := New(WithExpire(time.Second), WithKeyCnt(3))
+		mock := mocker.Create()
+		expectVal := interface{}(1)
+		mock.Func(cache.Get).Return(nil, ErrKeyNotFound).AndReturn(expectVal, nil)
+		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
+			return 2, nil
+		})
+
+		So(interfaceEqual(expectVal, val), ShouldBeTrue)
+		So(errorEqual(nil, err), ShouldBeTrue)
 	})
 }
