@@ -73,7 +73,7 @@ func TestNew(t *testing.T) {
 		getVals := make([]interface{}, 0, 3)
 		getErrs := make([]error, 0, 7)
 		for i := 0; i < 7; i++ {
-			getErrs = append(getErrs, KeyNotFoundErr)
+			getErrs = append(getErrs, ErrKeyNotFound)
 		}
 		for i := 0; i < 10; i++ {
 			val, err := cache.Get(i)
@@ -100,7 +100,7 @@ func TestNew(t *testing.T) {
 		getVals := make([]interface{}, 0, 3)
 		getErrs := make([]error, 0, 7)
 		for i := 0; i < 7; i++ {
-			getErrs = append(getErrs, KeyNotFoundErr)
+			getErrs = append(getErrs, ErrKeyNotFound)
 		}
 		for i := 0; i < 10; i++ {
 			val, err := cache.Get(i)
@@ -120,7 +120,7 @@ func TestNew(t *testing.T) {
 		cache.Set(1, 1)
 		time.Sleep(6 * time.Second)
 		expectVal := interface{}(1)
-		expectErr := KeyIsExpiredErr
+		expectErr := ErrKeyIsExpired
 		val, err := cache.Get(1)
 
 		So(interfaceEqual(expectVal, val), ShouldBeTrue)
@@ -159,7 +159,7 @@ func TestNew(t *testing.T) {
 			return 1, expectErr
 		})
 		expectVal := interface{}(2)
-		
+
 		So(interfaceEqual(expectVal, val), ShouldBeTrue)
 		So(errorEqual(expectErr, err), ShouldBeTrue)
 	})

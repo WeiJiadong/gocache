@@ -42,12 +42,12 @@ func (c *Cache) Get(key interface{}) (interface{}, error) {
 	// 1 查询key是否存在，若key不存在，则直接返回
 	val, found := c.data[key]
 	if !found {
-		return nil, KeyNotFoundErr
+		return nil, ErrKeyNotFound
 	}
 
-	// 2 key存在，判断key是否过期，若过期则返回val和KeyIsExpiredErr，方便调用方处理
+	// 2 key存在，判断key是否过期，若过期则返回val和ErrKeyIsExpired，方便调用方处理
 	if val.Value.(*elem).expire < time.Now().UnixNano() {
-		return val.Value.(*elem).value, KeyIsExpiredErr
+		return val.Value.(*elem).value, ErrKeyIsExpired
 	}
 	return val.Value.(*elem).value, nil
 }
