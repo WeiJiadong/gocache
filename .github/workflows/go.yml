@@ -22,10 +22,11 @@ jobs:
       run: go build -v
 
     - name: Test
-      run: go test -v
+      run: go test -short -coverprofile cover.out -covermode=atomic
     - name: Codecov
       uses: codecov/codecov-action@v2.1.0
       with:
         token: ${{secrets.CODECOV_TOKEN}}
+        file: cover.out
 
       
