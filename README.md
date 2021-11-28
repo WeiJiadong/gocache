@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/WeiJiadong/gocache)](https://goreportcard.com/report/github.com/WeiJiadong/gocache)
 [![Latest](https://img.shields.io/badge/latest-v1.0.6-blue.svg)](https://github.com/WeiJiadong/gocache/tree/v1.0.6)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
+[![codecov](https://codecov.io/gh/WeiJiadong/gocache/branch/master/graph/badge.svg?token=6RG0W91RF2)](https://codecov.io/gh/WeiJiadong/gocache)
 
 ### 支持的功能
 1.并发安全；  
