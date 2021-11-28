@@ -1,0 +1,21 @@
+os:            # 使用的操作系统 
+  - linux
+
+notifications:  # 邮箱通知
+  email: 353470469@qq.com
+
+go_import_path: # 使用Go需要导入的包. 
+  - golang.org/x/sync
+  - github.com/smartystreets/goconvey
+
+before_install: # 主要安装一些系统依赖,
+  - go mod tidy
+
+install: true # 安装, true跳过
+
+script: # 脚本执行.
+  - echo "run"
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
+
+after_success: # 上传测试报告
+  - bash <(curl -s https://codecov.io/bash)
