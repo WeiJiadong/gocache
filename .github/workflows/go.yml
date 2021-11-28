@@ -23,3 +23,6 @@ jobs:
 
     - name: Test
       run: go test -v
+    - name: Codecov
+      run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }}
+      
