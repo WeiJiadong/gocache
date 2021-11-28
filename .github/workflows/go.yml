@@ -24,5 +24,9 @@ jobs:
     - name: Test
       run: go test -v
     - name: Codecov
-      run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }}
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: ./coverage.txt
+
       
