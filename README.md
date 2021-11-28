@@ -1,8 +1,10 @@
 # gocache
+[![Badge](https://img.shields.io/badge/link-996.icu-%23FF4D5B.svg?style=flat-square)](https://996.icu/#/zh_CN)
 [![GoDoc](https://godoc.org/github.com/WeiJiadong/gocache?status.svg)](https://pkg.go.dev/github.com/WeiJiadong/gocache@v1.0.5)
 [![Go Report Card](https://goreportcard.com/badge/github.com/WeiJiadong/gocache)](https://goreportcard.com/report/github.com/WeiJiadong/gocache)
 [![Latest](https://img.shields.io/badge/latest-v1.0.5-blue.svg)](https://github.com/WeiJiadong/gocache/tree/v1.0.5)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 ### 支持的功能
 1.并发安全；  
 2.LRU淘汰策略；  
