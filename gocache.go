@@ -3,8 +3,11 @@ package gocache
 
 import (
 	"container/list"
+	"context"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 )
 
 // Cache 缓存核心结构
@@ -13,6 +16,7 @@ type Cache struct {
 	data    map[interface{}]*list.Element // 数据域，方便查询（O1）
 	barrier *sync.RWMutex                 // 保证并发安全
 	opts    *CacheOpt                     // 相关参数选项
+	sf      *singleflight.Group           // 用来并发更新数据
 }
 
 // CacheOpt Cache参数选项结构
@@ -79,13 +83,43 @@ func (c *Cache) Size() int {
 	return c.lru.Len()
 }
 
+// UpdateCallback 更新数据回调
+type UpdateCallback func() (interface{}, error)
+
+// GetAndSet 获取val，若val存在且未过期，则更新至缓存，否则通过singleflight的方式更新至缓存
+// 若更新失败，则使用旧数据兜底并返回对应的error给调用方
+func (c *Cache) GetAndSet(ctx context.Context, key string, fn UpdateCallback) (interface{}, error) {
+	// 1 判断key，若正常则直接返回
+	oldVal, err := c.Get(key)
+	if err == nil {
+		return oldVal, err
+	}
+
+	// 2 数据异常，通过singlefight进行更新
+	newVal, err, _ := c.sf.Do(key, func() (interface{}, error) {
+		// double check 从缓存里再获取一把数据，尽量避免重复更新
+		oldVal, err := c.Get(key)
+		if err == nil {
+			return oldVal, nil
+		}
+		// 更新数据，若数据源报错，则返回旧数据和error，若正常则更新缓存并返回数据
+		val, err := fn()
+		if err != nil {
+			return oldVal, err
+		}
+		return val, c.Set(key, val)
+	})
+	return newVal, err
+}
+
 // New Cache构造函数
 func New(opts ...CacheOptHelper) *Cache {
 	cache := &Cache{
 		data:    make(map[interface{}]*list.Element),
 		lru:     list.New(),
-		barrier: &sync.RWMutex{},
+		barrier: new(sync.RWMutex),
 		opts:    new(CacheOpt),
+		sf:      new(singleflight.Group),
 	}
 	for i := range opts {
 		opts[i](cache.opts)

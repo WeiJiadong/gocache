@@ -2,7 +2,9 @@
 package gocache
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -35,6 +37,10 @@ func interfaceEqual(set, get interface{}) bool {
 
 func errorEqual(set, get error) bool {
 	return set == get
+}
+
+func genKey(gid int) string {
+	return strconv.Itoa(gid)
 }
 
 func TestNew(t *testing.T) {
@@ -116,6 +122,44 @@ func TestNew(t *testing.T) {
 		expectVal := interface{}(1)
 		expectErr := KeyIsExpiredErr
 		val, err := cache.Get(1)
+
+		So(interfaceEqual(expectVal, val), ShouldBeTrue)
+		So(errorEqual(expectErr, err), ShouldBeTrue)
+	})
+
+	Convey("验证GetAndSet正常获取:", t, func() {
+		cache := New(WithExpire(5*time.Second), WithKeyCnt(3))
+		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
+			return 1, nil
+		})
+		expectVal := interface{}(1)
+
+		So(interfaceEqual(expectVal, val), ShouldBeTrue)
+		So(errorEqual(nil, err), ShouldBeTrue)
+	})
+
+	Convey("验证GetAndSet缓存有效，不会透传数据源:", t, func() {
+		cache := New(WithExpire(time.Second), WithKeyCnt(3))
+		cache.Set("1", 2)
+		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
+			return 1, fmt.Errorf("date error")
+		})
+		expectVal := interface{}(2)
+
+		So(interfaceEqual(expectVal, val), ShouldBeTrue)
+		So(errorEqual(nil, err), ShouldBeTrue)
+	})
+
+	Convey("验证GetAndSet数据源失败，用缓存兜底:", t, func() {
+		cache := New(WithExpire(time.Second), WithKeyCnt(3))
+		cache.Set("1", 2)
+		time.Sleep(2 * time.Second)
+		expectErr := fmt.Errorf("date error")
+		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
+			return 1, expectErr
+		})
+		expectVal := interface{}(2)
+		
 		So(interfaceEqual(expectVal, val), ShouldBeTrue)
 		So(errorEqual(expectErr, err), ShouldBeTrue)
 	})
