@@ -78,11 +78,6 @@ func (c *Cache) Set(key, val interface{}) error {
 	return nil
 }
 
-// Size 获取cache size
-func (c *Cache) Size() int {
-	return c.lru.Len()
-}
-
 // UpdateCallback 更新数据回调
 type UpdateCallback func() (interface{}, error)
 
