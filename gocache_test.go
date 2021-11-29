@@ -4,10 +4,12 @@ package gocache
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
 
+	"git.code.oa.com/NGTest/gomonkey"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -164,23 +166,19 @@ func TestNew(t *testing.T) {
 		So(errorEqual(expectErr, err), ShouldBeTrue)
 	})
 
-	// Convey("验证GetAndSet double check 逻辑:", t, func() {
-	// 	cache := New(WithExpire(time.Second), WithKeyCnt(3))
-	// 	flag := true
-	// 	get := func() (interface{}, error) {
-	// 		if flag {
-	// 			flag = false
-	// 			return nil, ErrKeyNotFound
-	// 		}
-	// 		return interface{}(1), nil
-	// 	}
-	// 	gomonkey.ApplyFunc(cache.Get, get)
-	// 	expectVal := interface{}(1)
-	// 	val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
-	// 		return 2, nil
-	// 	})
+	Convey("验证GetAndSet double check 逻辑:", t, func() {
+		cache := New(WithExpire(time.Second), WithKeyCnt(3))
+		outputs := []gomonkey.OutputCell{
+			{Values: gomonkey.Params{interface{}(1), ErrKeyIsExpired}},
+			{Values: gomonkey.Params{interface{}(1), nil}},
+		}
+		gomonkey.ApplyMethodSeq(reflect.TypeOf(cache), "Get", outputs)
+		expectVal := interface{}(1)
+		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
+			return 2, nil
+		})
 
-	// 	So(interfaceEqual(expectVal, val), ShouldBeTrue)
-	// 	So(errorEqual(nil, err), ShouldBeTrue)
-	// })
+		So(interfaceEqual(expectVal, val), ShouldBeTrue)
+		So(errorEqual(nil, err), ShouldBeTrue)
+	})
 }
