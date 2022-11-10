@@ -12,13 +12,16 @@
 3.数据过期，过期策略为懒更新;  
 4.key和value支持interface;  
 5.支持返回过期数据和对应error；  
-6.支持singelfight方式更新下游。
+6.支持singelfight方式更新下游;
+7.支持一键式读取并更新缓存；
+8.支持缓存状态信息打印。
 
 ### 使用示例
 ```go
 func main() {
-    cache := gocache.New(gocache.WithExpire(500*time.Second), gocache.WithKeyCnt(10))
-    cache.Set(1, 1)
-    fmt.Println(cache.Get(1))
+    cache := NewGoCacheBuilder(WithExpire(time.Second), WithKeyCnt(3), WithName("test_cache"))
+    v, err := cache.Get(context.TODO(), "1", func() (interface{}, error) {
+        return "1", nil
+    })
 }
 ```

@@ -9,176 +9,76 @@ import (
 	"testing"
 	"time"
 
-	"github.com/agiledragon/gomonkey"
+	"git.code.oa.com/NGTest/gomonkey"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func interfaceSliceEqual(sets, gets []interface{}) bool {
-	for i := range sets {
-		if sets[i] != gets[i] {
-			fmt.Println("sets:", sets)
-			fmt.Println("gets", gets)
-			return false
-		}
-	}
-	return true
-}
-
-func errorSliceEqual(sets, gets []error) bool {
-	for i := range sets {
-		if sets[i] != gets[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func interfaceEqual(set, get interface{}) bool {
-	return set == get
-}
-
-func errorEqual(set, get error) bool {
-	return set == get
-}
-
-func genKey(gid int) string {
-	return strconv.Itoa(gid)
-}
-
-func TestNew(t *testing.T) {
-	Convey("简单的set get:", t, func() {
-		cache := New(WithExpire(5*time.Second), WithKeyCnt(3))
-
-		sets := make([]interface{}, 0, 3)
-		for i := 0; i < 3; i++ {
-			sets = append(sets, i)
-			cache.Set(i, i)
-		}
-		gets := make([]interface{}, 0, 3)
-		for i := 0; i < 3; i++ {
-			val, err := cache.Get(i)
-			if err == nil {
-				gets = append(gets, val)
-			}
-		}
-
-		So(interfaceSliceEqual(sets, gets), ShouldBeTrue)
-	})
-
-	Convey("lru验证新增:", t, func() {
-		cache := New(WithExpire(5*time.Second), WithKeyCnt(3))
-		for i := 0; i < 10; i++ {
-			cache.Set(i, i)
-		}
-		expectErrs := make([]error, 0, 7)
-		expectVals := []interface{}{7, 8, 9}
-		getVals := make([]interface{}, 0, 3)
-		getErrs := make([]error, 0, 7)
-		for i := 0; i < 7; i++ {
-			getErrs = append(getErrs, ErrKeyNotFound)
-		}
-		for i := 0; i < 10; i++ {
-			val, err := cache.Get(i)
-			if err == nil {
-				getVals = append(getVals, val)
-			} else {
-				expectErrs = append(expectErrs, err)
-			}
-		}
-
-		So(interfaceSliceEqual(expectVals, getVals), ShouldBeTrue)
-		So(errorSliceEqual(expectErrs, getErrs), ShouldBeTrue)
-	})
-
-	Convey("lru验证修改:", t, func() {
-		cache := New(WithExpire(5*time.Second), WithKeyCnt(3))
-		for i := 0; i < 10; i++ {
-			cache.Set(i, i)
-		}
-		cache.Set(7, 7)
-		cache.Set(0, 0)
-		expectErrs := make([]error, 0, 7)
-		expectVals := []interface{}{0, 7, 9}
-		getVals := make([]interface{}, 0, 3)
-		getErrs := make([]error, 0, 7)
-		for i := 0; i < 7; i++ {
-			getErrs = append(getErrs, ErrKeyNotFound)
-		}
-		for i := 0; i < 10; i++ {
-			val, err := cache.Get(i)
-			if err == nil {
-				getVals = append(getVals, val)
-			} else {
-				expectErrs = append(expectErrs, err)
-			}
-		}
-
-		So(interfaceSliceEqual(expectVals, getVals), ShouldBeTrue)
-		So(errorSliceEqual(expectErrs, getErrs), ShouldBeTrue)
-	})
-
-	Convey("验证过期:", t, func() {
-		cache := New(WithExpire(time.Millisecond), WithKeyCnt(3))
-		cache.Set(1, 1)
-		time.Sleep(2 * time.Millisecond)
-		expectVal := interface{}(1)
-		expectErr := ErrKeyIsExpired
-		val, err := cache.Get(1)
-
-		So(interfaceEqual(expectVal, val), ShouldBeTrue)
-		So(errorEqual(expectErr, err), ShouldBeTrue)
-	})
-
-	Convey("验证GetAndSet正常获取:", t, func() {
-		cache := New(WithExpire(5*time.Second), WithKeyCnt(3))
-		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
-			return 1, nil
+func TestNewGoCacheBuilder(t *testing.T) {
+	key := "1"
+	expectVal := interface{}(1)
+	val := interface{}(2)
+	expectErr := ErrKeyIsExpired
+	size := 3
+	name := "test_cache"
+	Convey("验证从数据源获取:", t, func() {
+		cache := NewGoCacheBuilder(WithExpire(time.Second), WithKeyCnt(size))
+		v, err := cache.Get(context.TODO(), key, func() (interface{}, error) {
+			return expectVal, nil
 		})
-		expectVal := interface{}(1)
 
-		So(interfaceEqual(expectVal, val), ShouldBeTrue)
-		So(errorEqual(nil, err), ShouldBeTrue)
+		So(expectVal == v, ShouldBeTrue)
+		So(err == nil, ShouldBeTrue)
 	})
 
-	Convey("验证GetAndSet缓存有效，不会透传数据源:", t, func() {
-		cache := New(WithExpire(time.Second), WithKeyCnt(3))
-		cache.Set("1", 2)
-		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
-			return 1, fmt.Errorf("date error")
+	Convey("验证缓存有效，不会透传数据源:", t, func() {
+		cache := NewGoCacheBuilder(WithExpire(time.Second), WithKeyCnt(size), WithName(name))
+		cache.cache.Set(key, expectVal)
+		v, err := cache.Get(context.TODO(), key, func() (interface{}, error) {
+			return val, fmt.Errorf("date error")
 		})
-		expectVal := interface{}(2)
 
-		So(interfaceEqual(expectVal, val), ShouldBeTrue)
-		So(errorEqual(nil, err), ShouldBeTrue)
+		So(expectVal == v, ShouldBeTrue)
+		So(err == nil, ShouldBeTrue)
 	})
 
-	Convey("验证GetAndSet数据源失败，用缓存兜底:", t, func() {
-		cache := New(WithExpire(time.Second), WithKeyCnt(3))
-		cache.Set("1", 2)
-		time.Sleep(2 * time.Second)
-		expectErr := fmt.Errorf("date error")
-		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
-			return 1, expectErr
+	Convey("验证数据源失败，用缓存兜底:", t, func() {
+		cache := NewGoCacheBuilder(WithExpire(time.Millisecond), WithKeyCnt(size))
+		cache.cache.Set(key, expectVal)
+		time.Sleep(time.Millisecond)
+
+		v, err := cache.Get(context.TODO(), key, func() (interface{}, error) {
+			return val, expectErr
 		})
-		expectVal := interface{}(2)
 
-		So(interfaceEqual(expectVal, val), ShouldBeTrue)
-		So(errorEqual(expectErr, err), ShouldBeTrue)
+		So(expectVal == v, ShouldBeTrue)
+		So(expectErr == err, ShouldBeTrue)
 	})
 
-	Convey("验证GetAndSet double check 逻辑:", t, func() {
-		cache := New(WithExpire(time.Second), WithKeyCnt(3))
-		expectVal := interface{}(1)
+	Convey("验证 double check 逻辑:", t, func() {
+		cache := NewGoCacheBuilder(WithExpire(time.Millisecond), WithKeyCnt(size))
 		outputs := []gomonkey.OutputCell{
 			{Values: gomonkey.Params{expectVal, ErrKeyIsExpired}},
 			{Values: gomonkey.Params{expectVal, nil}},
 		}
-		gomonkey.ApplyMethodSeq(reflect.TypeOf(cache), "Get", outputs)
-		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
-			return 2, nil
+		gomonkey.ApplyMethodSeq(reflect.TypeOf(cache.cache), "Get", outputs)
+		v, err := cache.Get(context.TODO(), key, func() (interface{}, error) {
+			return val, nil
 		})
 
-		So(interfaceEqual(expectVal, val), ShouldBeTrue)
-		So(errorEqual(nil, err), ShouldBeTrue)
+		So(expectVal == v, ShouldBeTrue)
+		So(err == nil, ShouldBeTrue)
+	})
+}
+
+func BenchmarkGet(b *testing.B) {
+	c := NewGoCacheBuilder(WithName("test_cache"), WithKeyCnt(20), WithExpire(100000))
+	for i := 0; i < 1000000; i++ {
+		c.cache.Set(strconv.Itoa(i), i)
+	}
+	b.ResetTimer()
+	Convey("直接返回看get-put性能", b, func() {
+		c.Get(context.TODO(), "1", func() (interface{}, error) {
+			return 1, nil
+		})
 	})
 }
