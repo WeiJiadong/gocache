@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"git.code.oa.com/NGTest/gomonkey"
+	"github.com/agiledragon/gomonkey"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
