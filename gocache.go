@@ -59,6 +59,7 @@ func (c *Cache) Set(key, val interface{}) error {
 	if oldVal, ok := c.data[key]; ok {
 		c.lru.MoveToFront(oldVal)
 		oldVal.Value.(*elem).value = val
+		oldVal.Value.(*elem).expire = time.Now().Add(c.opts.expire).UnixNano()
 		return nil
 	}
 	// 2 key不存在，则直接在最前面插入一个值，并更新map
