@@ -44,7 +44,6 @@ func (c *Cache) Get(key interface{}) (interface{}, error) {
 	if !found {
 		return nil, ErrKeyNotFound
 	}
-
 	// 2 key存在，判断key是否过期，若过期则返回val和ErrKeyIsExpired，方便调用方处理
 	if val.Value.(*elem).expire < time.Now().UnixNano() {
 		return val.Value.(*elem).value, ErrKeyIsExpired
@@ -62,10 +61,8 @@ func (c *Cache) Set(key, val interface{}) error {
 		oldVal.Value.(*elem).value = val
 		return nil
 	}
-
 	// 2 key不存在，则直接在最前面插入一个值，并更新map
 	c.data[key] = c.lru.PushFront(&elem{key: key, value: val, expire: time.Now().Add(c.opts.expire).UnixNano()})
-
 	// 3 判断是否到达容量限制，若达到限制，则进行LRU剔除
 	if c.opts.keyCnt > 0 && c.lru.Len() > c.opts.keyCnt {
 		//c.RemoveOldest()
@@ -89,7 +86,6 @@ func (c *Cache) GetAndSet(ctx context.Context, key string, fn UpdateCallback) (i
 	if err == nil {
 		return oldVal, err
 	}
-
 	// 2 数据异常，通过singlefight进行更新
 	newVal, err, _ := c.sf.Do(key, func() (interface{}, error) {
 		// double check 从缓存里再获取一把数据，尽量避免重复更新
@@ -97,7 +93,6 @@ func (c *Cache) GetAndSet(ctx context.Context, key string, fn UpdateCallback) (i
 		if err == nil {
 			return oldVal, nil
 		}
-
 		// 更新数据，若数据源报错，则返回旧数据和error，若正常则更新缓存并返回数据
 		val, err := fn()
 		if err != nil {
@@ -118,7 +113,6 @@ func New(opts ...CacheOptHelper) *Cache {
 		opts:    new(CacheOpt),
 		sf:      new(singleflight.Group),
 	}
-
 	// 2 使用传入的opt修改cache对象的相关参数，并返回创建好的cache对象
 	for i := range opts {
 		opts[i](cache.opts)

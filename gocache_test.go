@@ -118,9 +118,9 @@ func TestNew(t *testing.T) {
 	})
 
 	Convey("验证过期:", t, func() {
-		cache := New(WithExpire(5*time.Second), WithKeyCnt(3))
+		cache := New(WithExpire(time.Millisecond), WithKeyCnt(3))
 		cache.Set(1, 1)
-		time.Sleep(6 * time.Second)
+		time.Sleep(2 * time.Millisecond)
 		expectVal := interface{}(1)
 		expectErr := ErrKeyIsExpired
 		val, err := cache.Get(1)
@@ -168,12 +168,12 @@ func TestNew(t *testing.T) {
 
 	Convey("验证GetAndSet double check 逻辑:", t, func() {
 		cache := New(WithExpire(time.Second), WithKeyCnt(3))
+		expectVal := interface{}(1)
 		outputs := []gomonkey.OutputCell{
-			{Values: gomonkey.Params{interface{}(1), ErrKeyIsExpired}},
-			{Values: gomonkey.Params{interface{}(1), nil}},
+			{Values: gomonkey.Params{expectVal, ErrKeyIsExpired}},
+			{Values: gomonkey.Params{expectVal, nil}},
 		}
 		gomonkey.ApplyMethodSeq(reflect.TypeOf(cache), "Get", outputs)
-		expectVal := interface{}(1)
 		val, err := cache.GetAndSet(context.TODO(), genKey(1), func() (val interface{}, err error) {
 			return 2, nil
 		})
