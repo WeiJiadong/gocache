@@ -57,16 +57,16 @@ func (c *Cache) Set(key, val interface{}) error {
 		oldVal.Value.(*elem).expire = time.Now().Add(c.opts.expire).UnixNano()
 		return nil
 	}
-	// 2 key不存在，则直接在最前面插入一个值，并更新map
-	c.data[key] = c.lru.PushFront(&elem{key: key, value: val, expire: time.Now().Add(c.opts.expire).UnixNano()})
-	// 3 判断是否到达容量限制，若达到限制，则进行LRU剔除
-	if c.opts.keyCnt > 0 && c.lru.Len() > c.opts.keyCnt {
+	// 2 先判断是否到达容量限制，若达到限制，则进行LRU剔除
+	if c.opts.keyCnt > 0 && c.lru.Len() >= c.opts.keyCnt {
 		if lruVal := c.lru.Back(); lruVal != nil {
 			c.lru.Remove(lruVal)
 			v := lruVal.Value.(*elem)
 			delete(c.data, v.key)
 		}
 	}
+	// 3 key不存在，则直接在最前面插入一个值，并更新map
+	c.data[key] = c.lru.PushFront(&elem{key: key, value: val, expire: time.Now().Add(c.opts.expire).UnixNano()})
 	return nil
 }
 
